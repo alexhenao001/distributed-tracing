@@ -1,0 +1,6 @@
+{
+  "orderId": "test-order-unavailable",
+  "available": false,
+  "quantity": 0,
+  "location": "warehouse-2"
+}

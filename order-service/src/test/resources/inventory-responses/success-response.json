@@ -1,0 +1,6 @@
+{
+  "orderId": "test-order-123",
+  "available": true,
+  "quantity": 25,
+  "location": "warehouse-1"
+}

@@ -1,6 +1,10 @@
 package com.henlab.orderservice.integration;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockserver.integration.ClientAndServer;
+import org.mockserver.model.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +18,8 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureObservability
@@ -26,6 +32,8 @@ class OrderControllerIntegrationTest {
     @LocalServerPort
     private int port;
 
+    private ClientAndServer mockServer;
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("inventory.service.url", () -> "http://localhost:8082");
@@ -33,6 +41,120 @@ class OrderControllerIntegrationTest {
 
     @Autowired
     private WebTestClient webTestClient;
+
+    @BeforeEach
+    void startMockServer() {
+        mockServer = ClientAndServer.startClientAndServer(8082);
+        setupMockExpectations();
+    }
+
+    @AfterEach
+    void stopMockServer() {
+        mockServer.stop();
+    }
+
+    private void setupMockExpectations() {
+        mockServer
+            .when(
+                request()
+                    .withMethod("GET")
+                    .withPath("/api/inventory/test-order-123")
+            )
+            .respond(
+                response()
+                    .withStatusCode(200)
+                    .withContentType(MediaType.APPLICATION_JSON)
+                    .withBody("""
+                        {
+                          "orderId": "test-order-123",
+                          "available": true,
+                          "quantity": 25,
+                          "location": "warehouse-1"
+                        }
+                        """)
+            );
+        
+        mockServer
+            .when(
+                request()
+                    .withMethod("GET")
+                    .withPath("/api/inventory/test-order-456")
+            )
+            .respond(
+                response()
+                    .withStatusCode(200)
+                    .withContentType(MediaType.APPLICATION_JSON)
+                    .withBody("""
+                        {
+                          "orderId": "test-order-456",
+                          "available": true,
+                          "quantity": 25,
+                          "location": "warehouse-1"
+                        }
+                        """)
+            );
+        
+        mockServer
+            .when(
+                request()
+                    .withMethod("GET")
+                    .withPath("/api/inventory/test-order-b3")
+            )
+            .respond(
+                response()
+                    .withStatusCode(200)
+                    .withContentType(MediaType.APPLICATION_JSON)
+                    .withBody("""
+                        {
+                          "orderId": "test-order-b3",
+                          "available": true,
+                          "quantity": 25,
+                          "location": "warehouse-1"
+                        }
+                        """)
+            );
+        
+        mockServer
+            .when(
+                request()
+                    .withMethod("GET")
+                    .withPath("/api/inventory/test-baggage-order")
+            )
+            .respond(
+                response()
+                    .withStatusCode(200)
+                    .withContentType(MediaType.APPLICATION_JSON)
+                    .withBody("""
+                        {
+                          "orderId": "test-baggage-order",
+                          "available": true,
+                          "quantity": 25,
+                          "location": "warehouse-1"
+                        }
+                        """)
+            );
+        
+        mockServer
+            .when(
+                request()
+                    .withMethod("GET")
+                    .withPath("/api/inventory/context-test-order")
+            )
+            .respond(
+                response()
+                    .withStatusCode(200)
+                    .withContentType(MediaType.APPLICATION_JSON)
+                    .withBody("""
+                        {
+                          "orderId": "context-test-order",
+                          "available": true,
+                          "quantity": 25,
+                          "location": "warehouse-1"
+                        }
+                        """)
+            );
+    }
+
 
     @Test
     void testProcessOrderWithB3Headers() {
